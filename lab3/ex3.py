@@ -14,41 +14,60 @@ def clo(n):
         ellipse(clouds, (255,255,255,randint(10,120)), (randint(-100,350), randint(-100, 275), randint(100,500), randint(10,30)))
         ellipse(clouds, (37,37,37,randint(10,150)), (randint(-100,350), randint(-100, 275), randint(100,500), randint(10,30)))
 
-def spaceship(k, x, y):
+def ellipse_series(surface, color, x_left, y_top, width, height, scale = 1):
     """
-    Draws spaceship on a separate screen
-
-    :param k: scale of the spaceship
-    :param x: x coordinate of a ?
-    :param y: y coordinate of a ?
+    Draws an array of ellipses with given colors and positions on the same surface
     
+    :param surface: Surface to draw ellipes on
+    :param x_left:  Array of the X coordinates of the leftmost points of the ellipses
+    :param y_top:   Array of the Y coordinates of the highest points of the ellipses
+    :param width:   Width array
+    :param height:  Height array
+    :param scale:   Scale factor of each ellipse
+
+    """
+    for c, x, y, w, h in zip(color, x_left, y_top, width, height):
+        ellipse(surface, c, (x * scale, y * scale, w * scale, h * scale))
+
+def spaceship(x, y, scale = 1):
+    """
+    Draws spaceship from the point (x, y)
+
+    :param scale: scale of the spaceship
+    :param x: x coordinate of a top left corner of a drawing surface
+    :param y: y coordinate of a top left corner of a drawing surface
+
     """
 
     # Main surface
-    spaceship_surface = pygame.Surface((100 * k, 100 * k), pygame.SRCALPHA)
+    spaceship_surface = pygame.Surface((100 * scale, 100 * scale), pygame.SRCALPHA)
 
     # Colors
-    WHITE = (255, 255, 255)
-    LIGHT = (200, 200, 200, 150)
+    WHITE      = (255, 255, 255)
+    LIGHT      = (200, 200, 200, 150)
     LIGHT_GRAY = (200, 200, 200)
-    DARK_GRAY = (100, 100, 100)
+    DARK_GRAY  = (100, 100, 100)
 
-    # Ray of the spaceship
-    polygon(spaceship_surface, LIGHT, [(10*k,90*k), (50*k,20*k),
-                                       (90*k,90*k), (10*k,90*k)])
+    # Trianglular transparent ray of the spaceship
+    vertices = [(10, 90), (50, 20), (90, 90)]
+    polygon(spaceship_surface, LIGHT, [(x * scale, y * scale) for x, y in vertices])
 
     # Fuselage shape
-    ellipse(spaceship_surface, DARK_GRAY, (10*k,0,90*k,30*k))
-    ellipse(spaceship_surface, LIGHT_GRAY, (20*k,0,70*k,20*k))
-    
-    # Rivets on the fuselage
-    ellipse(spaceship_surface, WHITE, (15*k,13*k,8*k,6*k))
-    ellipse(spaceship_surface, WHITE, (28*k,19*k,8*k,6*k))
-    ellipse(spaceship_surface, WHITE, (44*k,22*k,8*k,6*k))
-    ellipse(spaceship_surface, WHITE, (87*k,13*k,8*k,6*k))
-    ellipse(spaceship_surface, WHITE, (74*k,19*k,8*k,6*k))
-    ellipse(spaceship_surface, WHITE, (58*k,22*k,8*k,6*k))
+    color  = [DARK_GRAY, LIGHT_GRAY]
+    x_left = [10,        20]
+    y_top  = [0,         0]
+    width  = [90,        70]
+    height = [30,        20]
+    ellipse_series(spaceship_surface, color, x_left, y_top, width, height, scale)
 
+    # Rivets on the fuselage
+    color  = [WHITE] * 6
+    x_left = [15, 28, 44, 87, 74, 58]
+    y_top  = [13, 19, 22, 13, 19, 22]
+    width  = [8] * 6
+    height = [6] * 6
+    ellipse_series(spaceship_surface, color, x_left, y_top, width, height, scale)
+    
     # Adding surface to the drawing
     screen.blit(spaceship_surface, (x,y))
 
@@ -110,12 +129,12 @@ clouds = pygame.Surface((450, 650), pygame.SRCALPHA)
 clo(20)
 screen.blit(clouds, (0,0))
 #Объекты
-spaceship(1,300,280)
+spaceship(300, 280, scale = 1)
 alien(1,0.4,100,280)
-spaceship(2,0,225)
+spaceship(0, 225, scale = 2)
 alien(1,0.4,50,330)
 alien(0,0.4,140,330)
-spaceship(0.5,200,300)
+spaceship(200, 300, scale = 0.5)
 alien(0,1.5,250,320)
 alien(1,0.8,100,380)
 
