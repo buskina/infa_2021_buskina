@@ -8,11 +8,21 @@ pygame.init()
 FPS = 10
 screen = pygame.display.set_mode((450, 650))
 
-def clo(n):
+def clouds(surface, n):
+    """
+    Draws n pairs of dark and light transparent clouds
+
+    :param surface: Surface to draw clouds on
+    :param n: Number of pairs of clouds to draw
+
+    """
     for i in range(n):
-        "если будет скучно, можешь придумать способ размыть облака как в оригинальной картинке (17)"
-        ellipse(clouds, (255,255,255,randint(10,120)), (randint(-100,350), randint(-100, 275), randint(100,500), randint(10,30)))
-        ellipse(clouds, (37,37,37,randint(10,150)), (randint(-100,350), randint(-100, 275), randint(100,500), randint(10,30)))
+        # TODO: blur clouds
+        LIGHT = (255, 255, 255, randint(10, 120))
+        DARK  = ( 37,  37,  37, randint(10, 150))
+        ellipse(surface, LIGHT, (randint(-100,350), randint(-100, 275), randint(100,500), randint(10,30)))
+        ellipse(surface,  DARK, (randint(-100,350), randint(-100, 275), randint(100,500), randint(10,30)))
+
 
 def ellipse_series(surface, color, x_left, y_top, width, height, scale = 1):
     """
@@ -28,6 +38,7 @@ def ellipse_series(surface, color, x_left, y_top, width, height, scale = 1):
     """
     for c, x, y, w, h in zip(color, x_left, y_top, width, height):
         ellipse(surface, c, (x * scale, y * scale, w * scale, h * scale))
+
 
 def spaceship(x, y, scale = 1):
     """
@@ -70,6 +81,7 @@ def spaceship(x, y, scale = 1):
     
     # Adding surface to the drawing
     screen.blit(spaceship_surface, (x,y))
+
 
 def alien(x, y, scale = 1, flip = False):
     """
@@ -153,24 +165,44 @@ def alien(x, y, scale = 1, flip = False):
     # Adding surface to the drawing
     screen.blit(alien, (x,y))
 
-#Фон
-rect(screen, (34, 43, 0), (0, 325, 450, 325))
-rect(screen, (0, 34, 43), (0, 0, 450, 325))
-circle(screen, (240,240,230), (300, 150), 60)
-clouds = pygame.Surface((450, 650), pygame.SRCALPHA)
-clo(20)
-screen.blit(clouds, (0,0))
 
-#Объекты
-spaceship(200, 300, scale = 0.5)
-spaceship(300, 280, scale = 1)
-spaceship(0, 225, scale = 2)
+def background():
+    """
+    Draws background with clouds
 
-alien(100, 280, scale = 0.4, flip = True)
-alien(50, 330, scale = 0.4, flip = True)
-alien(140,330, scale = 0.4)
-alien(100, 380, scale = 0.8, flip = True)
-alien(250, 320, scale = 1.5)
+    """
+    # Background
+    SKY    = ( 0, 34, 43)
+    GROUND = (34, 43,  0)
+    rect(screen, GROUND, (0, 325, 450, 325))
+    rect(screen,    SKY, (0,   0, 450, 325))
+    circle(screen, (240, 240, 230), (300, 150), 60)
+    
+    # Clouds
+    clouds_surface = pygame.Surface((450, 650), pygame.SRCALPHA)
+    clouds(clouds_surface, 20)
+    screen.blit(clouds_surface, (0, 0))
+
+
+def picture():
+    """
+    Draws spaceships, aliens and the background with clouds
+
+    """
+    background()
+    
+    spaceship(200, 300, scale = 0.5)
+    spaceship(300, 280, scale = 1)
+    spaceship(  0, 225, scale = 2)
+
+    alien(100, 280, scale = 0.4, flip = True)
+    alien( 50, 330, scale = 0.4, flip = True)
+    alien(140, 330, scale = 0.4)
+    alien(100, 380, scale = 0.8, flip = True)
+    alien(250, 320, scale = 1.5)
+
+
+picture()
 
 pygame.display.update()
 clock = pygame.time.Clock()
