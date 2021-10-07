@@ -5,7 +5,7 @@ from pygame.draw import *
 
 pygame.init()
 
-FPS = 30
+FPS = 1
 screen = pygame.display.set_mode((450, 650))
 
 def clo(n):
@@ -14,25 +14,43 @@ def clo(n):
         ellipse(clouds, (255,255,255,randint(10,120)), (randint(-100,350), randint(-100, 275), randint(100,500), randint(10,30)))
         ellipse(clouds, (37,37,37,randint(10,150)), (randint(-100,350), randint(-100, 275), randint(100,500), randint(10,30)))
 
-def spaceship(k,x,y):
-    "k задает масштаб фигуры. У меня есть предположение, что если выставить к=10 и отмасштабировать целую область, то фигуры"
-    "перестанут быть ступенчатыми. Проверь это, пожалуйста. По замыслу x и y являются координатами левого верхнего угла области"
-    "или ее центра. Было бы круто прояснить и этот момент. Параметр p в следующей функции отвечает за отражение всей области с"
-    "картинкой, см. конец функции"
-    spsh = pygame.Surface((100*k, 100*k), pygame.SRCALPHA)
-    #Форма космического корабля
-    polygon(spsh, (200, 200, 200, 150), [(10*k,90*k), (50*k,20*k),
-                               (90*k,90*k), (10*k,90*k)])
-    ellipse(spsh, (100,100,100), (10*k,0,90*k,30*k))
-    ellipse(spsh, (200,200,200), (20*k,0,70*k,20*k))
-    #Точки на обшивке
-    ellipse(spsh, (255,255,255), (15*k,13*k,8*k,6*k))
-    ellipse(spsh, (255,255,255), (28*k,19*k,8*k,6*k))
-    ellipse(spsh, (255,255,255), (44*k,22*k,8*k,6*k))
-    ellipse(spsh, (255,255,255), (87*k,13*k,8*k,6*k))
-    ellipse(spsh, (255,255,255), (74*k,19*k,8*k,6*k))
-    ellipse(spsh, (255,255,255), (58*k,22*k,8*k,6*k))
-    screen.blit(spsh, (x,y))
+def spaceship(k, x, y):
+    """
+    Draws spaceship on a separate screen
+
+    :param k: scale of the spaceship
+    :param x: x coordinate of a ?
+    :param y: y coordinate of a ?
+    
+    """
+
+    # Main surface
+    spaceship_surface = pygame.Surface((100 * k, 100 * k), pygame.SRCALPHA)
+
+    # Colors
+    WHITE = (255, 255, 255)
+    LIGHT = (200, 200, 200, 150)
+    LIGHT_GRAY = (200, 200, 200)
+    DARK_GRAY = (100, 100, 100)
+
+    # Ray of the spaceship
+    polygon(spaceship_surface, LIGHT, [(10*k,90*k), (50*k,20*k),
+                                       (90*k,90*k), (10*k,90*k)])
+
+    # Fuselage shape
+    ellipse(spaceship_surface, DARK_GRAY, (10*k,0,90*k,30*k))
+    ellipse(spaceship_surface, LIGHT_GRAY, (20*k,0,70*k,20*k))
+    
+    # Rivets on the fuselage
+    ellipse(spaceship_surface, WHITE, (15*k,13*k,8*k,6*k))
+    ellipse(spaceship_surface, WHITE, (28*k,19*k,8*k,6*k))
+    ellipse(spaceship_surface, WHITE, (44*k,22*k,8*k,6*k))
+    ellipse(spaceship_surface, WHITE, (87*k,13*k,8*k,6*k))
+    ellipse(spaceship_surface, WHITE, (74*k,19*k,8*k,6*k))
+    ellipse(spaceship_surface, WHITE, (58*k,22*k,8*k,6*k))
+
+    # Adding surface to the drawing
+    screen.blit(spaceship_surface, (x,y))
 
 def alien(p,k,x,y):
     alien = pygame.Surface((100*k, 200*k), pygame.SRCALPHA)
@@ -110,5 +128,7 @@ while not finished:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             finished = True
+    pygame.display.update()
+
 
 pygame.quit()
