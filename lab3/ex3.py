@@ -5,7 +5,7 @@ from pygame.draw import *
 
 pygame.init()
 
-FPS = 1
+FPS = 10
 screen = pygame.display.set_mode((450, 650))
 
 def clo(n):
@@ -71,7 +71,7 @@ def spaceship(x, y, scale = 1):
     # Adding surface to the drawing
     screen.blit(spaceship_surface, (x,y))
 
-def alien(x, y, k = 1, flip = False):
+def alien(x, y, scale = 1, flip = False):
     """
     Draws a scalable alien which can be mirrored along Y axis
     
@@ -83,53 +83,74 @@ def alien(x, y, k = 1, flip = False):
     """ 
     
     # Main surface
-    alien = pygame.Surface((100*k, 200*k), pygame.SRCALPHA)
+    alien = pygame.Surface((100 * scale, 200 * scale), pygame.SRCALPHA)
     
-    #Туловище и ноги, одинаковые фигуры рисуются последовательно
-    ellipse(alien, (255,255,200), (24*k,95*k,25*k,65*k))
-    ellipse(alien, (255,255,200), (15*k,136*k,16*k,25*k))
-    ellipse(alien, (255,255,200), (40*k,145*k,16*k,25*k))
-    ellipse(alien, (255,255,200), (12*k,155*k,10*k,25*k))
-    ellipse(alien, (255,255,200), (42*k,165*k,10*k,25*k))
-    circle(alien, (255,255,200), (8*k,180*k), 8*k)
-    circle(alien, (255,255,200), (55*k,190*k), 8*k)
-    #Руки
-    circle(alien, (255,255,200), (20*k,103*k), 8*k)
-    circle(alien, (255,255,200), (50*k,105*k), 8*k)
-    ellipse(alien, (255,255,200), (7*k,110*k,12*k,10*k))
-    ellipse(alien, (255,255,200), (50*k,110*k,12*k,10*k))
-    ellipse(alien, (255,255,200), (7*k,120*k,7*k,9*k))
-    ellipse(alien, (255,255,200), (62*k,110*k,20*k,8*k))
-    #Рожки
-    ellipse(alien, (255,255,200), (0,37*k,15*k,10*k))
-    ellipse(alien, (255,255,200), (5*k,47*k,10*k,7*k))
-    ellipse(alien, (255,255,200), (10*k,53*k,8*k,9*k))
-    ellipse(alien, (255,255,200), (15*k,60*k,5*k,9*k))
-    #Второй рог
-    ellipse(alien, (255,255,200), (81*k,45*k,12*k,15*k))
-    ellipse(alien, (255,255,200), (73*k,45*k,7*k,6*k))
-    ellipse(alien, (255,255,200), (63*k,48*k,8*k,8*k))
-    ellipse(alien, (255,255,200), (52*k,60*k,6*k,8*k))
-    ellipse(alien, (255,255,200), (55*k,58*k,8*k,4*k))
-    #Голова
-    circle(alien, (255,255,200), (20*k,75*k), 8*k)
-    circle(alien, (255,255,200), (55*k,75*k), 8*k)
-    ellipse(alien, (255,255,200), (15*k,65*k,50*k,15*k))
-    ellipse(alien, (255,255,200), (20*k,75*k,40*k,15*k))
-    ellipse(alien, (255,255,200), (25*k,80*k,30*k,15*k))
-    circle(alien, (255,255,200), (40*k,90*k), 10*k)
-    #Глаза
-    circle(alien, (0,0,0), (30*k,76*k), 7*k)
-    circle(alien, (0,0,0), (50*k,77*k), 6*k)
-    circle(alien, (255,255,255), (33*k,79*k), 2*k)
-    circle(alien, (255,255,255), (52*k,79*k), 2*k)
-    #Яблоко
-    ellipse(alien, (255,0,0), (72*k,92*k,20*k,20*k))
-    ellipse(alien, (50,170,0), (82*k,77*k,3*k,10*k))
-    pygame.draw.arc(alien, (64,4,4), (77*k,87*k,10*k,10*k), -np.pi/8, 5*np.pi/8, 2)
+    # Colors
+    SKIN  = (255, 255, 200)
+    WHITE = (255, 255, 255)
+    BLACK = (  0,   0,   0)
+    RED   = (255,   0,   0)
+    GREEN = ( 50, 170,   0)
+    BROWN = ( 64,   4,   4)
 
+    # Body and legs
+    color  = [SKIN] * 7
+    x_left = [24,  15,  40,  12,  42,   0,  47]
+    y_top  = [95, 136, 145, 155, 165, 172, 182]
+    width  = [25,  16,  16,  10,  10,  16,  16]
+    height = [65,  25,  25,  25,  25,  16,  16]
+    ellipse_series(alien, color, x_left, y_top, width, height, scale)
+    
+    # Hands
+    color  = [SKIN] * 6
+    x_left = [  7,  50,   7,  62, 12, 42]
+    y_top  = [110, 110, 120, 110, 95, 97]
+    width  = [ 12,  12,   7,  20, 16, 16]
+    height = [ 10,  10,   9,   8, 16, 16]
+    ellipse_series(alien, color, x_left, y_top, width, height, scale)
+    
+    # Horns; first 4 ellipses are the left horn, last 5 are another one
+    color  = [SKIN] * 9
+    x_left = [0,  5,  10, 15, 81, 73, 63, 52, 55]
+    y_top  = [37, 47, 53, 60, 45, 45, 48, 60, 58]
+    width  = [15, 10,  8,  5, 12,  7,  8,  6,  8]
+    height = [10,  7,  9,  9, 15,  6,  8,  8,  4]
+    ellipse_series(alien, color, x_left, y_top, width, height, scale)
+      
+    # Head
+    color = [SKIN] * 6
+    x_left = [12, 47, 15, 20, 25, 30]
+    y_top  = [67, 67, 65, 75, 80, 90]
+    width  = [16, 16, 50, 40, 30, 20]
+    height = [16, 16, 15, 15, 15, 20]
+    ellipse_series(alien, color, x_left, y_top, width, height, scale)
+
+    # Eyes
+    color    = [BLACK, BLACK, WHITE, WHITE]
+    x_center = [30, 50, 33, 52]
+    y_center = [76, 77, 79, 79]
+    radius   = [7,   6,  2,  2]
+    for c, _x, _y, r in zip(color, x_center, y_center, radius):
+        # names _x and _y are chosen so not to confuse with params
+        circle(alien, c, (_x * scale, _y * scale), r * scale)
+
+    # Apple
+    color  = [RED, GREEN]
+    x_left = [72, 82]
+    y_top  = [92, 77]
+    width  = [20,  3]
+    height = [20, 10]
+    ellipse_series(alien, color, x_left, y_top, width, height, scale)
+    
+    pygame.draw.arc(alien, BROWN,
+        (77 * scale, 87 * scale, 10 * scale, 10 * scale),
+        -np.pi / 8, 5 * np.pi / 8, 2)
+
+    # Mirroring the alien if needed
     if flip: 
         alien = pygame.transform.flip(alien, True, False)
+    
+    # Adding surface to the drawing
     screen.blit(alien, (x,y))
 
 #Фон
@@ -145,11 +166,11 @@ spaceship(200, 300, scale = 0.5)
 spaceship(300, 280, scale = 1)
 spaceship(0, 225, scale = 2)
 
-alien(100, 280, k = 0.4, flip = True)
-alien(50, 330, k = 0.4, flip = True)
-alien(140,330, k = 0.4)
-alien(100, 380, k = 0.8, flip = True)
-alien(250, 320, k = 1.5)
+alien(100, 280, scale = 0.4, flip = True)
+alien(50, 330, scale = 0.4, flip = True)
+alien(140,330, scale = 0.4)
+alien(100, 380, scale = 0.8, flip = True)
+alien(250, 320, scale = 1.5)
 
 pygame.display.update()
 clock = pygame.time.Clock()
