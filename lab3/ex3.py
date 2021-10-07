@@ -16,7 +16,7 @@ def clo(n):
 
 def ellipse_series(surface, color, x_left, y_top, width, height, scale = 1):
     """
-    Draws an array of ellipses with given colors and positions on the same surface
+    Draws a sequence of ellipses with given colors and positions on the same surface
     
     :param surface: Surface to draw ellipes on
     :param x_left:  Array of the X coordinates of the leftmost points of the ellipses
@@ -33,9 +33,9 @@ def spaceship(x, y, scale = 1):
     """
     Draws spaceship from the point (x, y)
 
-    :param scale: scale of the spaceship
-    :param x: x coordinate of a top left corner of a drawing surface
-    :param y: y coordinate of a top left corner of a drawing surface
+    :param x: X coordinate of a top left corner of a drawing surface
+    :param y: Y coordinate of a top left corner of a drawing surface
+    :param scale: Scale of the drawing
 
     """
 
@@ -71,8 +71,20 @@ def spaceship(x, y, scale = 1):
     # Adding surface to the drawing
     screen.blit(spaceship_surface, (x,y))
 
-def alien(p,k,x,y):
+def alien(x, y, k = 1, flip = False):
+    """
+    Draws a scalable alien which can be mirrored along Y axis
+    
+    :param flip: True if alien should be mirrored, False else
+    :param x: X coordinate of the top left corner of the drawing surface
+    :param y: Y coordinate or the top left corner of the drawing surface
+    :param k: Scale of the alien
+
+    """ 
+    
+    # Main surface
     alien = pygame.Surface((100*k, 200*k), pygame.SRCALPHA)
+    
     #Туловище и ноги, одинаковые фигуры рисуются последовательно
     ellipse(alien, (255,255,200), (24*k,95*k,25*k,65*k))
     ellipse(alien, (255,255,200), (15*k,136*k,16*k,25*k))
@@ -115,11 +127,10 @@ def alien(p,k,x,y):
     ellipse(alien, (255,0,0), (72*k,92*k,20*k,20*k))
     ellipse(alien, (50,170,0), (82*k,77*k,3*k,10*k))
     pygame.draw.arc(alien, (64,4,4), (77*k,87*k,10*k,10*k), -np.pi/8, 5*np.pi/8, 2)
-    if p==0:
-        screen.blit(alien, (x,y))
-    else: 
-        flip = pygame.transform.flip(alien, True, False,)
-        screen.blit(flip, (x,y))
+
+    if flip: 
+        alien = pygame.transform.flip(alien, True, False)
+    screen.blit(alien, (x,y))
 
 #Фон
 rect(screen, (34, 43, 0), (0, 325, 450, 325))
@@ -128,15 +139,17 @@ circle(screen, (240,240,230), (300, 150), 60)
 clouds = pygame.Surface((450, 650), pygame.SRCALPHA)
 clo(20)
 screen.blit(clouds, (0,0))
+
 #Объекты
-spaceship(300, 280, scale = 1)
-alien(1,0.4,100,280)
-spaceship(0, 225, scale = 2)
-alien(1,0.4,50,330)
-alien(0,0.4,140,330)
 spaceship(200, 300, scale = 0.5)
-alien(0,1.5,250,320)
-alien(1,0.8,100,380)
+spaceship(300, 280, scale = 1)
+spaceship(0, 225, scale = 2)
+
+alien(100, 280, k = 0.4, flip = True)
+alien(50, 330, k = 0.4, flip = True)
+alien(140,330, k = 0.4)
+alien(100, 380, k = 0.8, flip = True)
+alien(250, 320, k = 1.5)
 
 pygame.display.update()
 clock = pygame.time.Clock()
