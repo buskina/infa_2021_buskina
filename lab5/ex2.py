@@ -20,13 +20,6 @@ pygame.display.update()
 clock = pygame.time.Clock()
 finished = False
 
-def pool_of_balls(number_of_balls):
-    """Функция создает несколько мячей"""
-    pool=[]
-    for i in range  (number_of_balls):
-        pool2=new_ball()
-        pool.append(pool2)
-    return pool
 
 def new_ball():
     """Функция создает мяч и возвращает массив из его цвета, размера, пары координат
@@ -40,7 +33,17 @@ def new_ball():
         pool2.append(randint(-10,10))
     return pool2
 
+def pool_of_balls(number_of_balls):
+    """Функция объединяет данные о нужном количестве (number_of_balls) мячей в двумерный массив"""
+    pool=[]
+    for i in range  (number_of_balls):
+        pool2=new_ball()
+        pool.append(pool2)
+    return pool
+
 def move(pool,number_of_balls,dt):
+    """Фукция реализует движение шаров внутри поля выбранного размера, изменяя соответстсвующим образом координаты и, 
+    если это необходимо, скорости шаров в их общем массиве (pool) размерности number_of_balls с временным шагом dt"""
     for i in range  (number_of_balls):
         pool[i][2]+=pool[i][4]*dt
         pool[i][3]+=pool[i][5]*dt
@@ -59,6 +62,7 @@ def move(pool,number_of_balls,dt):
     return pool
 
 def draw(pool, number_of_balls):
+    """Функция отрисовывает общий массив (pool) шариков размерности number_of_balls"""
     for i in range(number_of_balls):
         circle(screen, pool[i][0], (pool[i][2], pool[i][3]), pool[i][1])
 
@@ -81,26 +85,29 @@ while not finished:
             # Считываем координаты клика
             event.x=event.pos[0]
             event.y=event.pos[1]
-            # Проверяем, попал ли пользователь в шарик
             counter=0
+            # Проверяем, попал ли пользователь в шарик
             for i in range(number):
                 x=pool[i][2]
                 y=pool[i][3]
                 r=pool[i][1]
                 if (event.x>=x-r)&(event.x<=x+r)&(event.y>=y-r)&(event.y<=y+r):
+                    # Если пользователь попал, заменяем пойманный шарик на другой, случайный 
                     pool[i]=new_ball()
+                    # Увеличиваем на 1 счетчик попаданий
                     counter+=1  
             if counter==0:
+                # Ни одного попадания не обнаружено - сообщаем об этом пользователю и уменьшаем количество очков на 1
                 print('Miss!')
                 score-=1
             else:
+                # Обнаружено counter попаданий - сообщаем пользователю об успехе, даем по 2 балла за попадание
                 print('Success!')
                 score=score+counter*2
+            # Обновляем картинку на экране, сообщаем текущее количество баллов
             pygame.display.update()
             screen.fill(BLACK)
             print(score)
     pygame.display.update()
     screen.fill(BLACK)
-
-print(score)
 pygame.quit()
