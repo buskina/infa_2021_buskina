@@ -14,12 +14,55 @@ GREEN = (0, 255, 0)
 MAGENTA = (255, 0, 255)
 CYAN = (0, 255, 255)
 BLACK = (0, 0, 0)
+WHITE = (255, 255, 255)
 COLORS = [RED, BLUE, YELLOW, GREEN, MAGENTA, CYAN]
 
 pygame.display.update()
 clock = pygame.time.Clock()
 finished = False
 
+def read_file():
+    res = []
+    try:
+        with open("res.txt", "r") as f:
+            users = []
+            scores = []
+            for line in f:
+                data = line.split(":   ")
+                if len(data) == 2:
+                    res.append(data)
+                    users.append(data[0])
+                    scores.append(data[1])
+    except:
+        with open("res.txt", "w"):
+            pass
+        return [], [], []
+    return res, users, scores
+
+def write_file(user, score):
+    data, users, scores = read_file() # Find position
+    find = False
+    with open("res.txt", "w") as f:
+        if len(scores) >= 1 and score > int(scores[0]):
+            scores = [str(score) + "\n"] + scores
+            users = [user] + users
+        else:
+            for i, score_file in enumerate(scores):
+                if int(score_file) <= score:
+                    if not find:
+                        scores_tmp = scores[:i] + [str(score) + "\n"] + scores[i:]
+                        users_tmp = users[:i] + [user] + users[i:]
+                        scores = scores_tmp
+                        users = users_tmp
+                        find = True
+            if not find:
+                scores = scores + [str(score) + "\n"]
+                users = users + [user]
+        
+
+        for i, user in enumerate(users): # Writing to file
+            f.write(f"{user}:   {scores[i]}")
+            
 
 def new_ball():
     """Функция создает мяч и возвращает массив из его цвета, размера, пары координат
@@ -61,23 +104,61 @@ def move(pool,number_of_balls,dt):
              pool[i][5]=-pool[i][5]
     return pool
 
-def draw(pool, number_of_balls):
+def new_blinker():
+    """Функция создает информацию о появляющемся и исчезающем объекте, возвращает массив, элементами которого являются цвет,
+    время жизни, координаты его левого верхнего угла, ширина и высота соответственно"""
+    pool2=[]
+    pool2.append(COLORS[randint(0, 5)])
+    pool2.append(randint(40,80))
+    for j in range(2):
+        pool2.append(randint(0,560))
+    for j in range(2):
+        pool2.append(randint(20,40))
+    return pool2
+
+def death_of_blinker(pool,dt):
+    "Функция уменьшает оставшееся время жизни исчезающего объекта или заменяет его на новый, если время истекло"
+    if pool[1]<=0:
+        pool=new_blinker()
+    else:
+        pool[1]-=dt
+    return pool
+
+def draw_balls(pool, number_of_balls):
     """Функция отрисовывает общий массив (pool) шариков размерности number_of_balls"""
     for i in range(number_of_balls):
         circle(screen, pool[i][0], (pool[i][2], pool[i][3]), pool[i][1])
 
+def draw_blinker(pool):
+    """Функция отрисовывает исчезающий объект"""
+    if pool[1]%40>20:
+        rect(screen, pool[0], (pool[2], pool[3], pool[4], pool[5]))
+
 # Счетчик очков
 score=0
-# Создаем много шариков
+# Создаем много шариков и исчезающий объект
 number=10
 pool=pool_of_balls(number)
+blinker=new_blinker()
+
+user1=str(input())
+user="username: "+user1
+font=pygame.font.Font(None, 36)
+username=font.render(user, True, WHITE)
+screen.blit(username, (10, 70))
+pygame.display.update()
+
 
 while not finished:
     clock.tick(FPS)
-    draw(move(pool,number,1), number)
+    draw_balls(move(pool,number,1), number)
+    blinker=death_of_blinker(blinker,1)
+    draw_blinker(blinker)
     for event in pygame.event.get():
         # Если пользователь закрыл окно:
         if event.type == pygame.QUIT:
+            
+            write_file(user1, score)
             finished = True
         # Если пользователь нажал кнопку мыши:
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -86,6 +167,13 @@ while not finished:
             event.x=event.pos[0]
             event.y=event.pos[1]
             counter=0
+            x=blinker[2]
+            y=blinker[3]
+            dx=blinker[4]
+            dy=blinker[5]
+            if (event.x<=x+dx)&(event.x>=x-dx)&(event.y<=y+dy)&(event.y>=y-dy):
+                score+=2
+                counter+=1
             # Проверяем, попал ли пользователь в шарик
             for i in range(number):
                 x=pool[i][2]
@@ -108,6 +196,12 @@ while not finished:
             pygame.display.update()
             screen.fill(BLACK)
             print(score)
+    # Выводим результат на экран
+    font=pygame.font.Font(None, 36)
+    scorevalue="score = "+str(score)
+    scoreboard=font.render(scorevalue, True, WHITE)
+    screen.blit(scoreboard, (10, 50))
     pygame.display.update()
     screen.fill(BLACK)
 pygame.quit()
+
