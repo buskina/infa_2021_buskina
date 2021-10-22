@@ -3,6 +3,9 @@ from pygame.draw import *
 from random import randint
 pygame.init()
 
+user1=input()
+user="username: "+user1
+
 FPS = 40
 screen = pygame.display.set_mode((600, 600))
 
@@ -22,14 +25,16 @@ clock = pygame.time.Clock()
 finished = False
 
 def read_file():
-    res = []
+    """Функция чтения файла. Возвращает три массива: в первом результаты находятся с именами игроков,
+    во втором - только имена, в третьем - только результаты. Создает файл, если не было найдено нужного"""
+    res=[]
     try:
         with open("res.txt", "r") as f:
-            users = []
-            scores = []
+            users=[]
+            scores=[]
             for line in f:
-                data = line.split(":   ")
-                if len(data) == 2:
+                data=line.split(":   ")
+                if len(data)==2:
                     res.append(data)
                     users.append(data[0])
                     scores.append(data[1])
@@ -40,27 +45,33 @@ def read_file():
     return res, users, scores
 
 def write_file(user, score):
-    data, users, scores = read_file() # Find position
-    find = False
+    """Функция записи в файл обновленных результатов. Для корректной работы функции важно, чтобы
+    результаты в файле уже были отсортированы"""
+    data, users, scores=read_file() 
+    find=False
     with open("res.txt", "w") as f:
-        if len(scores) >= 1 and score > int(scores[0]):
-            scores = [str(score) + "\n"] + scores
-            users = [user] + users
+        # Если поставлен новый рекорд, добавляем новый результат в начало
+        if len(scores)>=1 and score>int(scores[0]):
+            scores=[str(score) +"\n"] + scores
+            users=[user]+users
         else:
+            # Пробегаем весь массив и ищем меньший результат
             for i, score_file in enumerate(scores):
-                if int(score_file) <= score:
+                if int(score_file)<=score:
                     if not find:
-                        scores_tmp = scores[:i] + [str(score) + "\n"] + scores[i:]
-                        users_tmp = users[:i] + [user] + users[i:]
-                        scores = scores_tmp
-                        users = users_tmp
-                        find = True
+                        # Следим, чтобы новый результат записывался один раз
+                        scores_tmp=scores[:i] + [str(score)+"\n"] + scores[i:]
+                        users_tmp=users[:i] + [user] + users[i:]
+                        scores=scores_tmp
+                        users=users_tmp
+                        find=True
+            # Если результата хуже не найдено, записываем в конец
             if not find:
-                scores = scores + [str(score) + "\n"]
-                users = users + [user]
+                scores=scores+[str(score)+"\n"]
+                users=users+[user]
         
 
-        for i, user in enumerate(users): # Writing to file
+        for i, user in enumerate(users):
             f.write(f"{user}:   {scores[i]}")
             
 
@@ -141,14 +152,6 @@ number=10
 pool=pool_of_balls(number)
 blinker=new_blinker()
 
-user1=str(input())
-user="username: "+user1
-font=pygame.font.Font(None, 36)
-username=font.render(user, True, WHITE)
-screen.blit(username, (10, 70))
-pygame.display.update()
-
-
 while not finished:
     clock.tick(FPS)
     draw_balls(move(pool,number,1), number)
@@ -156,17 +159,18 @@ while not finished:
     draw_blinker(blinker)
     for event in pygame.event.get():
         # Если пользователь закрыл окно:
-        if event.type == pygame.QUIT:
-            
-            write_file(user1, score)
-            finished = True
+        if event.type==pygame.QUIT:
+            # Записываем результат игры в файл
+            write_file(user1,score)
+            finished=True
         # Если пользователь нажал кнопку мыши:
-        elif event.type == pygame.MOUSEBUTTONDOWN:
+        elif event.type==pygame.MOUSEBUTTONDOWN:
             print('Click!')
             # Считываем координаты клика
             event.x=event.pos[0]
             event.y=event.pos[1]
             counter=0
+            # Проверем, попал ли пользователь хотя бы в один из объектов
             x=blinker[2]
             y=blinker[3]
             dx=blinker[4]
@@ -174,15 +178,14 @@ while not finished:
             if (event.x<=x+dx)&(event.x>=x-dx)&(event.y<=y+dy)&(event.y>=y-dy):
                 score+=2
                 counter+=1
-            # Проверяем, попал ли пользователь в шарик
             for i in range(number):
                 x=pool[i][2]
                 y=pool[i][3]
                 r=pool[i][1]
-                if (event.x>=x-r)&(event.x<=x+r)&(event.y>=y-r)&(event.y<=y+r):
+                event.r=((event.x-x)**2+(event.y-y)**2)**0.5
+                if event.r<=r:
                     # Если пользователь попал, заменяем пойманный шарик на другой, случайный 
                     pool[i]=new_ball()
-                    # Увеличиваем на 1 счетчик попаданий
                     counter+=1  
             if counter==0:
                 # Ни одного попадания не обнаружено - сообщаем об этом пользователю и уменьшаем количество очков на 1
@@ -201,6 +204,8 @@ while not finished:
     scorevalue="score = "+str(score)
     scoreboard=font.render(scorevalue, True, WHITE)
     screen.blit(scoreboard, (10, 50))
+    username=font.render(user, True, WHITE)
+    screen.blit(username, (10, 70))
     pygame.display.update()
     screen.fill(BLACK)
 pygame.quit()
