@@ -56,6 +56,9 @@ class Ball:
         if self.x + self.r >= WIDTH:
             self.vx = -self.vx
             self.x = WIDTH - self.r
+        if self.x - self.r <= 0:
+            self.vx = -self.vx
+            self.x = self.r
 
     def draw(self):
         """Отрисовывает мяч"""
@@ -95,6 +98,10 @@ class Gun:
         self.f2_on = 0
         self.an = 1
         self.color = GREY
+        self.x = 10
+        self.y = 580
+        self.vx = 0
+        self.vy = 0
 
     def fire2_start(self, event):
         self.f2_on = 1
@@ -105,11 +112,14 @@ class Gun:
         Происходит при отпускании кнопки мыши.
         Начальные значения компонент скорости мяча vx и vy зависят от положения мыши.
         """
-        global balls, bullet, targets
+        global balls, bullet, targets, blinkers
         bullet += 1
-        new_ball = Ball(self.screen)
-        new_ball.r += 5
-        self.an = math.atan2((event.pos[1]-new_ball.y), (event.pos[0]-new_ball.x))
+        new_ball = Ball(self.screen, x=self.x, y=self.y)
+        new_ball.r += 2
+        if event.pos[0] == new_ball.x:
+            self.an = math.pi/2
+        else:
+            self.an = math.atan2((event.pos[1]-new_ball.y), (event.pos[0]-new_ball.x))
         new_ball.vx = self.f2_power * math.cos(self.an)
         new_ball.vy = - self.f2_power * math.sin(self.an)
         balls.append(new_ball)
@@ -119,7 +129,10 @@ class Gun:
     def targetting(self, event):
         """Прицеливание. Зависит от положения мыши."""
         if event:
-            self.an = math.atan((event.pos[1]-450) / (event.pos[0]-20))
+            if event.pos[0] == self.x:
+                self.an = math.pi/2
+            else:
+                self.an = math.atan((event.pos[1]-self.y) / (event.pos[0]-self.x))
         if self.f2_on:
             self.color = YELLOW
         else:
@@ -127,18 +140,44 @@ class Gun:
 
     def draw(self):
         """Отрисовывает пушку"""
+        angle = math.cos(self.an)
+        if self.an < 0:
+            angle = -angle
         pygame.draw.line(
             self.screen,
             BLACK,
-            (10, 450), (10+self.f2_power * math.cos(self.an), 450+self.f2_power * math.sin(self.an)),
+            (self.x, self.y), (self.x-self.f2_power * angle, 
+            self.y-self.f2_power * abs(math.sin(self.an))),
             7
         )
         pygame.draw.line(
             self.screen,
             self.color,
-            (10, 450), (10+self.f2_power * math.cos(self.an), 450+self.f2_power * math.sin(self.an)),
+            (self.x, self.y), (self.x-self.f2_power * angle, 
+            self.y-self.f2_power * abs(math.sin(self.an))),
             5
         )
+        pygame.draw.rect(self.screen, 
+            BLACK, (self.x-10, self.y, 20, 10))
+        pygame.draw.circle(
+            self.screen,
+            BLACK,
+            (self.x, self.y+15),
+            5
+        )
+        pygame.draw.circle(
+            self.screen,
+            BLACK,
+            (self.x-10, self.y+15),
+            5
+        )
+        pygame.draw.circle(
+            self.screen,
+            BLACK,
+            (self.x+10, self.y+15),
+            5
+        )
+        
     
     def power_up(self):
         """Определяет силу выстрела"""
@@ -149,6 +188,15 @@ class Gun:
         else:
             self.color = GREY
 
+    def move(self):
+        """Движение пушки"""
+        if self.x < 10:
+            self.vx = 0
+            self.x = 10
+        elif self.x > WIDTH-10:
+            self.vx = 0
+            self.x = WIDTH-10
+        self.x += self.vx
 
 class Target:
     def __init__(self, screen, x = 600, y = 300, r = 10, vx = 0, vy = 0):
@@ -220,6 +268,56 @@ class Target:
             self.vx = -self.vx
             self.x = self.r
 
+class Blinker:
+    def __init__(self, screen, x = 0, y = 0, dx = 10, dy = 10, live =40):
+        """ Конструктор класса blinker
+        
+        Args:
+        x - начальное положение мишени по горизонтали
+        y - начальное положение мишени по вертикали
+        dx - размер мишени по горизонтали
+        dy - размер мишени по вертикали
+        dt - время жизни мишени 
+        """
+        self.screen = screen
+        self.x = x
+        self.y = y
+        self.vx = dx
+        self.vy = dy
+        self.color = choice(GAME_COLORS)
+        self.r = min(dx, dy)
+        self.points = 0
+        self.live = live
+
+    def new_target(self):
+        """ Инициализация новой цели. """
+        x = self.x = rnd(10, WIDTH-40)
+        y = self.y = rnd(10, HEIGHT-40)
+        dx = self.dx = rnd(5, 20)
+        dy = self.dy = rnd(5, 20)
+        live = self.live = rnd(80, 120)
+        color = self.color = RED
+
+    def hit(self, points=1):
+        """Попадание шарика в цель."""
+        self.points += points  
+    
+    def draw(self):
+        """Отрисовка цели"""
+        if self.live%40>20:
+            pygame.draw.rect(self.screen, 
+            BLACK, (self.x-self.dx-1, self.y-self.dy-1, 2*self.dx+2, 2*self.dy+2))
+            pygame.draw.rect(self.screen, 
+            self.color, (self.x-self.dx, self.y-self.dy, 2*self.dx, 2*self.dy))
+
+    def move(self):
+        """Функция уменьшает оставшееся время жизни исчезающего объекта или заменяет его на новый,
+         если время истекло"""
+        if self.live<=0:
+            self.new_target()
+        else:
+            self.live-=1
+
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
@@ -229,6 +327,9 @@ targets = []
 
 clock = pygame.time.Clock()
 gun = Gun(screen)
+# Массив целей можно создавать и в цикле, но для демонстрации работы тут только два
+targets.append(Blinker(screen))
+targets.append(Blinker(screen))
 targets.append(Target(screen))
 targets.append(Target(screen))
 for i in targets:
@@ -239,11 +340,11 @@ attempt = 0
 
 while not finished:
     screen.fill(WHITE)
+    gun.move()
     gun.draw()
     for i in targets:
         i.move()
         i.draw()
-
     for b in balls:
         b.live -= 1
         if b.live > 0 or (abs(b.vx)>0.01 and abs(b.vy)>0.01):
@@ -258,7 +359,24 @@ while not finished:
     pygame.display.update()
 
     clock.tick(FPS)
+
     for event in pygame.event.get():
+        if event.type == pygame.KEYUP:
+            if (not pygame.key.get_pressed()[pygame.K_RIGHT]) and (not pygame.key.get_pressed()[pygame.K_LEFT]):
+                gun.vx = 0
+        if event.type == pygame.KEYDOWN:
+            if pygame.key.get_pressed()[pygame.K_RIGHT]:
+                gun.vx = 5
+            elif pygame.key.get_pressed()[pygame.K_LEFT]:
+                gun.vx = -5
+
+        if event.type == pygame.KEYDOWN:
+            if pygame.key.get_pressed()[pygame.K_1]:
+                bullet_type = 1
+        if event.type == pygame.KEYDOWN:
+            if pygame.key.get_pressed()[pygame.K_2]:
+                bullet_type = 2
+
         if event.type == pygame.QUIT:
             finished = True
         elif event.type == pygame.MOUSEBUTTONDOWN:
@@ -278,6 +396,14 @@ while not finished:
                 attempt = 0
                 i.new_target()
     gun.power_up()
-    
 
+    #if score < 0:
+        #screen.fill(BLACK)
+        #font=pygame.font.Font(None, 72)
+        #scorevalue="Game Over"
+        #scoreboard=font.render(scorevalue, True, RED)
+        #screen.blit(scoreboard, (150, 300))
+        #finished = True
+        #pygame.display.update()
+    
 pygame.quit()
