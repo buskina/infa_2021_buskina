@@ -16,7 +16,7 @@ CYAN = 0x00FFCC
 BLACK = 0x000000
 WHITE = 0xFFFFFF
 GREY = 0x7D7D7D
-GAME_COLORS = [BLUE, YELLOW, GREEN, MAGENTA, CYAN]
+GAME_COLORS = [YELLOW, MAGENTA, CYAN, WHITE]
 
 WIDTH = 800
 HEIGHT = 600
@@ -99,9 +99,10 @@ class Gun:
         self.an = 1
         self.color = GREY
         self.x = 10
-        self.y = 580
+        self.y = HEIGHT-20
         self.vx = 0
         self.vy = 0
+        self.r = 20
 
     def fire2_start(self, event):
         self.f2_on = 1
@@ -112,7 +113,7 @@ class Gun:
         Происходит при отпускании кнопки мыши.
         Начальные значения компонент скорости мяча vx и vy зависят от положения мыши.
         """
-        global balls, bullet, targets, blinkers
+        global balls, bullet, targets, shards
         bullet += 1
         new_ball = Ball(self.screen, x=self.x, y=self.y)
         new_ball.r += 2
@@ -197,6 +198,13 @@ class Gun:
             self.vx = 0
             self.x = WIDTH-10
         self.x += self.vx
+        if self.y > HEIGHT-10:
+            self.vy = 0
+            self.y = HEIGHT-10
+        elif self.y < 7*HEIGHT/8:
+            self.vy = 0
+            self.y = 7*HEIGHT/8
+        self.y += self.vy
 
 class Target:
     def __init__(self, screen, x = 600, y = 300, r = 10, vx = 0, vy = 0):
@@ -318,15 +326,49 @@ class Blinker:
         else:
             self.live-=1
 
+class Bomb(Ball):
+    def __init__(self):
+        """Инициализация дочернего класса"""
+        Ball.__init__(self, screen)
+        self.live = 1
+    def new_bomb(self, gun):
+        """Подстраиваем параметры"""
+        self.x = gun.x
+        self.y = 0
+        self.vx = 0
+        self.vy = rnd(1,3)/100
+        self.r = rnd(1,5)
+    def expmove(self, gun):
+        self.live = not self.hittest(gun)
+        if self.y+self.r >= HEIGHT:
+            self.live = 0
+        if self.live:
+            self.color = BLACK
+            self.move()
+        else:
+            for i in range(100):
+                shard = Ball(self.screen)
+                shard.x = self.x
+                shard.y = self.y
+                shard.vx = rnd(-50, 50)
+                shard.vy = rnd(-50, 50)
+                shard.r = rnd(1, 3)
+                shard.color = YELLOW
+                shard.live = 30
+                shards.append(shard)
+            self.new_bomb(gun)
 
 pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 bullet = 0
 balls = []
+shards = []
 targets = []
 
 clock = pygame.time.Clock()
 gun = Gun(screen)
+bomb = Bomb()
+bomb.new_bomb(gun)
 # Массив целей можно создавать и в цикле, но для демонстрации работы тут только два
 targets.append(Blinker(screen))
 targets.append(Blinker(screen))
@@ -339,9 +381,21 @@ score = 0
 attempt = 0
 
 while not finished:
-    screen.fill(WHITE)
+    screen.fill(BLUE)
+    pygame.draw.rect(screen, 
+            GREEN, (0, 7*HEIGHT/8, WIDTH, HEIGHT/8))
     gun.move()
     gun.draw()
+    bomb.expmove(gun)
+    score = score - bomb.hittest(gun)
+    bomb.draw()
+    for i in shards:
+        if i.live<0:
+            shards.remove(i)
+        else:
+            i.move()
+            i.draw()
+            i.live -= 1
     for i in targets:
         i.move()
         i.draw()
@@ -349,6 +403,8 @@ while not finished:
         b.live -= 1
         if b.live > 0 or (abs(b.vx)>0.01 and abs(b.vy)>0.01):
             b.draw()
+        else:
+            balls.remove(b)
     font=pygame.font.Font(None, 36)
     scorevalue="score = "+str(score)
     scoreboard=font.render(scorevalue, True, BLACK)
@@ -357,18 +413,23 @@ while not finished:
     attemptboard=font.render(attemptvalue, True, BLACK)
     screen.blit(attemptboard, (10, 10))
     pygame.display.update()
-
     clock.tick(FPS)
 
     for event in pygame.event.get():
         if event.type == pygame.KEYUP:
             if (not pygame.key.get_pressed()[pygame.K_RIGHT]) and (not pygame.key.get_pressed()[pygame.K_LEFT]):
                 gun.vx = 0
+            if (not pygame.key.get_pressed()[pygame.K_UP]) and (not pygame.key.get_pressed()[pygame.K_DOWN]):
+                gun.vy = 0
         if event.type == pygame.KEYDOWN:
             if pygame.key.get_pressed()[pygame.K_RIGHT]:
                 gun.vx = 5
             elif pygame.key.get_pressed()[pygame.K_LEFT]:
                 gun.vx = -5
+            if pygame.key.get_pressed()[pygame.K_UP]:
+                gun.vy = -5
+            elif pygame.key.get_pressed()[pygame.K_DOWN]:
+                gun.vy = 5
 
         if event.type == pygame.KEYDOWN:
             if pygame.key.get_pressed()[pygame.K_1]:
