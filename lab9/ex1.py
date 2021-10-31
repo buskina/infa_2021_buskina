@@ -88,6 +88,52 @@ class Ball:
         else:
             return True
 
+class Laser:
+    def __init__(self, screen: pygame.Surface, x=40, y=450):
+        """ Конструктор класса laser
+        Args:
+        x - начальное положение лазера по горизонтали
+        y - начальное положение лазера по вертикали
+        """
+        self.screen = screen
+        self.x = x
+        self.y = y
+        self.length = 20
+        self.vx = 0
+        self.vy = 0
+        self.an = 1
+        self.r = 3
+        self.color = choice(GAME_COLORS)
+        self.live = 500
+
+    def move(self):
+        """Переместить лазер по прошествии единицы времени.
+        Метод описывает перемещение лазера за один кадр перерисовки.
+        """
+        self.x += self.vx
+        self.y -= self.vy
+        self.live -= 1
+
+    def draw(self):
+        pygame.draw.line(
+            self.screen,
+            self.color,
+            (self.x, self.y), (self.x + math.cos(self.an) * self.length, 
+            self.y + math.sin(self.an) * self.length),
+            5
+        )
+
+    def hittest(self, obj):
+        """Функция проверяет сталкивалкивается ли данный обьект с целью, описываемой в обьекте obj.
+        Args:
+            obj: Обьект, с которым проверяется столкновение.
+        Returns:
+            Возвращает True в случае столкновения лазера и цели. В противном случае возвращает False.
+        """
+        if (self.x - obj.x) ** 2 + (self.y - obj.y) ** 2 <= obj.r ** 2:
+            return True
+        else:
+            return False
 
 class Gun:
     def __init__(self, screen):
@@ -113,17 +159,29 @@ class Gun:
         Происходит при отпускании кнопки мыши.
         Начальные значения компонент скорости мяча vx и vy зависят от положения мыши.
         """
-        global balls, bullet, targets, shards
+        global balls, bullet, targets, shards, lasers
         bullet += 1
-        new_ball = Ball(self.screen, x=self.x, y=self.y)
-        new_ball.r += 2
-        if event.pos[0] == new_ball.x:
-            self.an = math.pi/2
-        else:
-            self.an = math.atan2((event.pos[1]-new_ball.y), (event.pos[0]-new_ball.x))
-        new_ball.vx = self.f2_power * math.cos(self.an)
-        new_ball.vy = - self.f2_power * math.sin(self.an)
-        balls.append(new_ball)
+        if bullet_type == 1:
+            new_ball = Ball(self.screen, x=self.x, y=self.y)
+            new_ball.r += 2
+            if event.pos[0] == new_ball.x:
+                self.an = math.pi/2
+            else:
+                self.an = math.atan2((event.pos[1]-new_ball.y), (event.pos[0]-new_ball.x))
+            new_ball.vx = self.f2_power * math.cos(self.an)
+            new_ball.vy = - self.f2_power * math.sin(self.an)
+            balls.append(new_ball)
+        if bullet_type == 2:
+            new_laser = Laser(self.screen, x=self.x, y=self.y)
+            if event.pos[0] == new_laser.x:
+                self.an = math.pi/2
+            else:
+                self.an = math.atan2((event.pos[1]-new_laser.y), (event.pos[0]-new_laser.x))
+            new_laser.an = self.an
+            new_laser.vx = self.f2_power * math.cos(self.an)
+            new_laser.vy = - self.f2_power * math.sin(self.an)
+            new_laser.length = self.f2_power
+            lasers.append(new_laser)
         self.f2_on = 0
         self.f2_power = 10
 
@@ -336,9 +394,10 @@ class Bomb(Ball):
         self.x = gun.x
         self.y = 0
         self.vx = 0
-        self.vy = rnd(1,3)/100
+        self.vy = rnd(1,3)
         self.r = rnd(1,5)
     def expmove(self, gun):
+        """Движение бомбы: просто падает до столкновения с танком, а в конце взрывается"""
         self.live = not self.hittest(gun)
         if self.y+self.r >= HEIGHT:
             self.live = 0
@@ -362,6 +421,7 @@ pygame.init()
 screen = pygame.display.set_mode((WIDTH, HEIGHT))
 bullet = 0
 balls = []
+lasers = []
 shards = []
 targets = []
 
@@ -377,10 +437,12 @@ targets.append(Target(screen))
 for i in targets:
     i.new_target()
 finished = False
-score = 0
+score = 5
 attempt = 0
+bullet_type = 1
 
 while not finished:
+    # Отрисовка всего
     screen.fill(BLUE)
     pygame.draw.rect(screen, 
             GREEN, (0, 7*HEIGHT/8, WIDTH, HEIGHT/8))
@@ -405,6 +467,14 @@ while not finished:
             b.draw()
         else:
             balls.remove(b)
+    for l in lasers:
+        l.live -= 1
+        if l.live > 0:
+            l.draw()
+        else:
+            lasers.remove(l)
+    
+    # Вывод счетчиков на экран
     font=pygame.font.Font(None, 36)
     scorevalue="score = "+str(score)
     scoreboard=font.render(scorevalue, True, BLACK)
@@ -415,6 +485,7 @@ while not finished:
     pygame.display.update()
     clock.tick(FPS)
 
+    # Управление
     for event in pygame.event.get():
         if event.type == pygame.KEYUP:
             if (not pygame.key.get_pressed()[pygame.K_RIGHT]) and (not pygame.key.get_pressed()[pygame.K_LEFT]):
@@ -448,23 +519,33 @@ while not finished:
         elif event.type == pygame.MOUSEMOTION:
             gun.targetting(event)
 
+    # Проверка столкновений
     for b in balls:
         b.move()
         for i in targets:
             if b.hittest(i):
                 i.hit()
-                score += 2 - attempt
+                score += 6 - attempt
+                attempt = 0
+                i.new_target()
+    for l in lasers:
+        l.move()
+        for i in targets:
+            if l.hittest(i):
+                i.hit()
+                score += 6 - attempt
                 attempt = 0
                 i.new_target()
     gun.power_up()
 
-    #if score < 0:
-        #screen.fill(BLACK)
-        #font=pygame.font.Font(None, 72)
-        #scorevalue="Game Over"
-        #scoreboard=font.render(scorevalue, True, RED)
-        #screen.blit(scoreboard, (150, 300))
-        #finished = True
-        #pygame.display.update()
-    
+    if score < 0:
+        screen.fill(BLACK)
+        font=pygame.font.Font(None, 72)
+        scorevalue="Game Over"
+        scoreboard=font.render(scorevalue, True, GREEN)
+        screen.blit(scoreboard, (250, 250))
+        finished = True
+        pygame.display.update()
+        pygame.time.delay(2000)
+
 pygame.quit()
